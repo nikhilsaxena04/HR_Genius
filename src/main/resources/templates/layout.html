@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' — HRGenius'">HRGenius</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-container">
+    <!-- Fixed Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="brand-logo">HRGenius</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a th:href="@{/dashboard}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'dashboard'} ? ' active' : ''">
+                <span>Dashboard</span>
+            </a>
+
+            <!-- Admin-Only Links -->
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/departments}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'departments'} ? ' active' : ''">
+                <span>Departments</span>
+            </a>
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/employees}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'employees'} ? ' active' : ''">
+                <span>Employees</span>
+            </a>
+
+            <!-- Shared Links -->
+            <a th:href="@{/attendance}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'attendance'} ? ' active' : ''">
+                <span>Attendance</span>
+            </a>
+            <a th:href="@{/leaves}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'leaves'} ? ' active' : ''">
+                <span>Leaves</span>
+            </a>
+            <a th:href="@{/payroll}"
+               class="nav-link"
+               th:classappend="${activeMenu == 'payroll'} ? ' active' : ''">
+                <span>Payroll</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <span>HRGenius v1.0 &copy; 2026</span>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <h1 class="topbar-title" th:text="${title}">Page Title</h1>
+            <div class="topbar-user">
+                <div class="user-pill">
+                    <span class="user-name" sec:authentication="name">user@hrgenius.com</span>
+                    <span class="user-role" sec:authorize="hasRole('ADMIN')">Administrator</span>
+                    <span class="user-role" sec:authorize="hasRole('EMPLOYEE')">Employee</span>
+                </div>
+                <form th:action="@{/logout}" method="post" style="margin: 0;">
+                    <button type="submit" class="btn btn-secondary btn-sm">Logout</button>
+                </form>
+            </div>
+        </header>
+
+        <main class="content-body">
+            <!-- Injected View Content -->
+            <div th:replace="${content}">
+                <p>Default content placeholder</p>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>

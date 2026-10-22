@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Dashboard', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Dashboard</h2>
+            <p style="color: var(--muted); font-size: 13px;" th:if="${isAdmin}">Organization overview and key operational indicators</p>
+            <p style="color: var(--muted); font-size: 13px;" th:unless="${isAdmin}">
+                Welcome back, <strong th:text="${employee.fullName}">Rahul Sharma</strong> &bull; <span th:text="${employee.designation}">Software Engineer</span>
+            </p>
+        </div>
+        <div th:if="${isAdmin}" style="display: flex; gap: 8px;">
+            <a th:href="@{/employees/new}" class="btn btn-primary">+ Add Employee</a>
+            <a th:href="@{/payroll}" class="btn btn-secondary">Payroll</a>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ADMIN DASHBOARD
+         ========================================== -->
+    <div th:if="${isAdmin}">
+        <!-- 4 Key Stat Cards -->
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Active Employees</div>
+                <div class="stat-value" th:text="${totalEmployees}">5</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Present Today</div>
+                <div class="stat-value" style="color: var(--badge-green-text);" th:text="${presentToday}">4</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending Leaves</div>
+                <div class="stat-value" style="color: var(--badge-amber-text);" th:text="${pendingLeaves}">1</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Departments</div>
+                <div class="stat-value" th:text="${totalDepartments}">3</div>
+            </div>
+        </div>
+
+        <!-- Recent Leave Applications Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Leave Requests</h3>
+                <a th:href="@{/leaves}" class="btn btn-secondary btn-sm">View All Leaves</a>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Type</th>
+                            <th>Period</th>
+                            <th>Status</th>
+                            <th style="width: 100px; text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(recentLeaves)}">
+                            <td colspan="6" style="text-align: center; color: var(--muted); padding: 24px;">
+                                No recent leave applications.
+                            </td>
+                        </tr>
+                        <tr th:each="req : ${recentLeaves}">
+                            <td>
+                                <strong th:text="${req.employee.fullName}">Rahul Sharma</strong><br>
+                                <small style="color: var(--muted);" th:text="${req.employee.empCode}">EMP001</small>
+                            </td>
+                            <td th:text="${req.employee.department != null ? req.employee.department.name : '—'}">Engineering</td>
+                            <td th:text="${req.type}">CASUAL</td>
+                            <td th:text="${#temporals.format(req.fromDate, 'dd MMM')} + ' - ' + ${#temporals.format(req.toDate, 'dd MMM yyyy')}">
+                                23 Oct - 24 Oct 2026
+                            </td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="'badge-' + ${req.status}"
+                                      th:text="${req.status}">PENDING</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a th:href="@{/leaves}" class="btn btn-secondary btn-sm">Review</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         EMPLOYEE DASHBOARD
+         ========================================== -->
+    <div th:unless="${isAdmin}">
+        <div class="stat-grid" style="margin-bottom: 24px;">
+            <!-- Today's Clock Status -->
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 8px;">
+                    <h3 class="card-title" style="font-size: 14px;">Today's Attendance</h3>
+                    <span class="badge"
+                          th:if="${todayAttendance != null}"
+                          th:classappend="'badge-' + ${todayAttendance.status}"
+                          th:text="${todayAttendance.status}">PRESENT</span>
+                    <span class="badge badge-amber" th:if="${todayAttendance == null}">NOT CLOCKED</span>
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+                    <div th:if="${todayAttendance != null}">
+                        Clock In: <strong style="color: var(--text);" th:text="${todayAttendance.checkIn != null ? #temporals.format(todayAttendance.checkIn, 'hh:mm a') : '—'}">09:00 AM</strong><br>
+                        Clock Out: <strong style="color: var(--text);" th:text="${todayAttendance.checkOut != null ? #temporals.format(todayAttendance.checkOut, 'hh:mm a') : 'Not yet'}">—</strong>
+                    </div>
+                    <div th:if="${todayAttendance == null}">
+                        You have not clocked in for today yet.
+                    </div>
+                </div>
+                <a th:href="@{/attendance}" class="btn btn-secondary btn-sm" style="width: 100%;">Go to Clock In/Out</a>
+            </div>
+
+            <!-- Leave Balance -->
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 8px;">
+                    <h3 class="card-title" style="font-size: 14px;">Annual Leave Balance</h3>
+                    <span class="badge badge-green" th:text="${remainingLeaves} + ' days left'">12 days left</span>
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+                    Total Quota: <strong style="color: var(--text);" th:text="${totalLeaves}">12</strong> days<br>
+                    Used Leaves: <strong style="color: var(--badge-amber-text);" th:text="${usedLeaves}">0</strong> days
+                </div>
+                <a th:href="@{/leaves/apply}" class="btn btn-secondary btn-sm" style="width: 100%;">Apply for Leave</a>
+            </div>
+
+            <!-- Latest Payslip -->
+            <div class="card" style="margin-bottom: 0;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 8px;">
+                    <h3 class="card-title" style="font-size: 14px;">Latest Payslip</h3>
+                </div>
+                <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
+                    <div th:if="${latestPayslip != null}">
+                        Period: <strong style="color: var(--text);" th:text="${T(java.time.Month).of(latestPayslip.month).name()} + ' ' + ${latestPayslip.year}">OCTOBER 2026</strong><br>
+                        Net Salary: <strong style="color: var(--text); font-size: 15px;" th:text="'$' + ${#numbers.formatDecimal(latestPayslip.netSalary, 1, 'COMMA', 2, 'POINT')}">$54,000.00</strong>
+                    </div>
+                    <div th:if="${latestPayslip == null}">
+                        No payslips generated for your profile yet.
+                    </div>
+                </div>
+                <a th:if="${latestPayslip != null}" th:href="@{'/payroll/payslip/' + ${latestPayslip.id}}" class="btn btn-secondary btn-sm" style="width: 100%;">View Payslip</a>
+                <a th:if="${latestPayslip == null}" th:href="@{/payroll}" class="btn btn-secondary btn-sm" style="width: 100%;">Payroll History</a>
+            </div>
+        </div>
+
+        <!-- Employee Info Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Employee Profile Details</h3>
+                <code th:text="${employee.empCode}">EMP001</code>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-size: 13px;">
+                <div>
+                    <span class="stat-label">Full Name</span>
+                    <div style="font-weight: 600;" th:text="${employee.fullName}">Rahul Sharma</div>
+                </div>
+                <div>
+                    <span class="stat-label">Work Email</span>
+                    <div th:text="${employee.email}">rahul@hrgenius.com</div>
+                </div>
+                <div>
+                    <span class="stat-label">Department</span>
+                    <div th:text="${employee.department != null ? employee.department.name : '—'}">Engineering</div>
+                </div>
+                <div>
+                    <span class="stat-label">Joined On</span>
+                    <div th:text="${#temporals.format(employee.joinDate, 'dd MMMM yyyy')}">15 Jan 2024</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

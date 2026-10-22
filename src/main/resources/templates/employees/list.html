@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Employees', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Employees</h2>
+            <p style="color: var(--muted); font-size: 13px;">Manage staff profiles, department assignments, and system access</p>
+        </div>
+        <a th:href="@{/employees/new}" class="btn btn-primary">+ Add Employee</a>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- Search & Filter Card -->
+    <div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+        <form th:action="@{/employees}" method="get" class="toolbar" style="margin: 0;">
+            <div style="display: flex; gap: 12px; flex: 1; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 220px;">
+                    <input type="text" name="keyword" th:value="${keyword}" placeholder="Search by full name or email...">
+                </div>
+                <div style="width: 200px;">
+                    <select name="departmentId">
+                        <option value="">All Departments</option>
+                        <option th:each="dept : ${departments}"
+                                th:value="${dept.id}"
+                                th:text="${dept.name}"
+                                th:selected="${dept.id == departmentId}">Engineering</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-secondary">Filter</button>
+                <a th:href="@{/employees}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Employee Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Emp Code</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Designation</th>
+                        <th style="width: 100px;">Status</th>
+                        <th style="width: 200px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(employees)}">
+                        <td colspan="7" style="text-align: center; color: var(--muted); padding: 24px;">
+                            No employees found matching the filter criteria.
+                        </td>
+                    </tr>
+                    <tr th:each="emp : ${employees}">
+                        <td><code th:text="${emp.empCode}">EMP001</code></td>
+                        <td>
+                            <strong th:text="${emp.fullName}">Rahul Sharma</strong>
+                        </td>
+                        <td th:text="${emp.email}">rahul@hrgenius.com</td>
+                        <td th:text="${emp.department != null ? emp.department.name : '—'}">Engineering</td>
+                        <td th:text="${emp.designation}">Software Engineer</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="'badge-' + ${emp.status}"
+                                  th:text="${emp.status}">ACTIVE</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 6px;">
+                                <a th:href="@{'/employees/view/' + ${emp.id}}" class="btn btn-secondary btn-sm">View</a>
+                                <a th:href="@{'/employees/edit/' + ${emp.id}}" class="btn btn-secondary btn-sm">Edit</a>
+                                <a th:if="${emp.status == T(com.hrgenius.model.EmployeeStatus).ACTIVE}"
+                                   th:href="@{'/employees/deactivate/' + ${emp.id}}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Deactivating this employee will immediately revoke their login access. Continue?');">
+                                    Deactivate
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

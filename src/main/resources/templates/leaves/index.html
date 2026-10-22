@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Leaves', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Leave Management</h2>
+            <p style="color: var(--muted); font-size: 13px;" th:if="${isAdmin}">Review and approve employee leave applications</p>
+            <p style="color: var(--muted); font-size: 13px;" th:unless="${isAdmin}">Check your annual quota and submit leave requests</p>
+        </div>
+        <a th:unless="${isAdmin}" th:href="@{/leaves/apply}" class="btn btn-primary">+ Apply for Leave</a>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- ==========================================
+         EMPLOYEE VIEW: Balance Stats
+         ========================================== -->
+    <div th:unless="${isAdmin}" class="stat-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+            <div class="stat-label">Annual Quota</div>
+            <div class="stat-value" th:text="${totalLeaves}">12</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Used Days</div>
+            <div class="stat-value" style="color: var(--badge-amber-text);" th:text="${usedLeaves}">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Remaining Balance</div>
+            <div class="stat-value" style="color: var(--badge-green-text);" th:text="${remainingLeaves}">12</div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ADMIN VIEW: Filter Bar
+         ========================================== -->
+    <div th:if="${isAdmin}" class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+        <form th:action="@{/leaves}" method="get" style="display: flex; gap: 12px; align-items: center; margin: 0; flex-wrap: wrap;">
+            <label for="status" style="margin: 0; font-weight: 500;">Filter by Status:</label>
+            <div style="width: 180px;">
+                <select id="status" name="status">
+                    <option value="">All Requests</option>
+                    <option th:each="st : ${T(com.hrgenius.model.LeaveStatus).values()}"
+                            th:value="${st}"
+                            th:text="${st}"
+                            th:selected="${st == filterStatus}">PENDING</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a th:href="@{/leaves}" class="btn btn-secondary">Reset</a>
+        </form>
+    </div>
+
+    <!-- Leave Requests Table (Shared structure) -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span th:if="${isAdmin}">All Employee Leave Applications</span>
+                <span th:unless="${isAdmin}">Your Leave Application History</span>
+            </h3>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:if="${isAdmin}">Employee</th>
+                        <th>Type</th>
+                        <th>From Date</th>
+                        <th>To Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Admin Remark</th>
+                        <th th:if="${isAdmin}" style="width: 220px; text-align: right;">Review</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(leaves)}">
+                        <td th:colspan="${isAdmin ? 8 : 6}" style="text-align: center; color: var(--muted); padding: 24px;">
+                            No leave requests found.
+                        </td>
+                    </tr>
+                    <tr th:each="req : ${leaves}">
+                        <td th:if="${isAdmin}">
+                            <strong th:text="${req.employee.fullName}">Rahul Sharma</strong><br>
+                            <small style="color: var(--muted);" th:text="${req.employee.empCode}">EMP001</small>
+                        </td>
+                        <td>
+                            <span style="font-weight: 500;" th:text="${req.type}">CASUAL</span>
+                        </td>
+                        <td th:text="${#temporals.format(req.fromDate, 'dd MMM yyyy')}">23 Oct 2026</td>
+                        <td th:text="${#temporals.format(req.toDate, 'dd MMM yyyy')}">24 Oct 2026</td>
+                        <td th:text="${req.reason}">Family function</td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="'badge-' + ${req.status}"
+                                  th:text="${req.status}">PENDING</span>
+                        </td>
+                        <td th:text="${req.adminRemark != null && !req.adminRemark.isEmpty() ? req.adminRemark : '—'}">—</td>
+
+                        <!-- Admin Actions -->
+                        <td th:if="${isAdmin}" style="text-align: right;">
+                            <div th:if="${req.status == T(com.hrgenius.model.LeaveStatus).PENDING}">
+                                <details style="position: relative; display: inline-block;">
+                                    <summary class="btn btn-secondary btn-sm" style="cursor: pointer;">Take Action</summary>
+                                    <div style="position: absolute; right: 0; top: 100%; background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 16px; width: 280px; z-index: 50; text-align: left; margin-top: 4px;">
+                                        <div style="font-weight: 600; margin-bottom: 8px;">Review Decision</div>
+                                        <input type="text" th:id="'remark-' + ${req.id}" placeholder="Optional admin remark..." style="margin-bottom: 12px;">
+                                        <div style="display: flex; gap: 8px;">
+                                            <form th:action="@{'/leaves/approve/' + ${req.id}}" method="post" style="flex: 1; margin: 0;"
+                                                  onsubmit="this.adminRemark.value = document.getElementById('remark-' + [[${req.id}]]).value;">
+                                                <input type="hidden" name="adminRemark">
+                                                <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">Approve</button>
+                                            </form>
+                                            <form th:action="@{'/leaves/reject/' + ${req.id}}" method="post" style="flex: 1; margin: 0;"
+                                                  onsubmit="this.adminRemark.value = document.getElementById('remark-' + [[${req.id}]]).value;">
+                                                <input type="hidden" name="adminRemark">
+                                                <button type="submit" class="btn btn-danger btn-sm" style="width: 100%;">Reject</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                            <span th:unless="${req.status == T(com.hrgenius.model.LeaveStatus).PENDING}" style="color: var(--muted); font-size: 12px;">Completed</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

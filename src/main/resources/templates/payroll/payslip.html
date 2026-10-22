@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Payslip', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar no-print">
+        <div>
+            <h2>Payslip</h2>
+            <p style="color: var(--muted); font-size: 13px;">Official employee salary statement</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="window.print()" class="btn btn-primary">Print Payslip</button>
+            <a th:href="@{/payroll}" class="btn btn-secondary">&larr; Back to Payroll</a>
+        </div>
+    </div>
+
+    <!-- Printable Payslip Container -->
+    <div class="payslip-container">
+        <div class="payslip-header">
+            <h1 style="font-size: 26px; margin-bottom: 4px;">HRGenius</h1>
+            <p style="color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">
+                Salary Statement &bull; <span th:text="${T(java.time.Month).of(payroll.month).name()} + ' ' + ${payroll.year}">OCTOBER 2026</span>
+            </p>
+            <p style="color: var(--muted); font-size: 11px; margin-top: 4px;">
+                Generated on: <span th:text="${#temporals.format(payroll.generatedOn, 'dd MMMM yyyy')}">22 October 2026</span>
+            </p>
+        </div>
+
+        <!-- Employee Info Summary -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div>
+                <span class="stat-label">Employee Name</span>
+                <div style="font-weight: 600; font-size: 15px;" th:text="${payroll.employee.fullName}">Rahul Sharma</div>
+            </div>
+            <div>
+                <span class="stat-label">Employee Code</span>
+                <div><code th:text="${payroll.employee.empCode}">EMP001</code></div>
+            </div>
+            <div>
+                <span class="stat-label">Department</span>
+                <div th:text="${payroll.employee.department != null ? payroll.employee.department.name : '—'}">Engineering</div>
+            </div>
+            <div>
+                <span class="stat-label">Designation</span>
+                <div th:text="${payroll.employee.designation}">Software Engineer</div>
+            </div>
+        </div>
+
+        <!-- Earnings and Deductions Two-Column Grid -->
+        <div class="payslip-grid">
+            <!-- Earnings Box -->
+            <div class="payslip-box">
+                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);">Earnings</h4>
+                <div class="payslip-row">
+                    <span>Basic Salary</span>
+                    <span th:text="'$' + ${#numbers.formatDecimal(payroll.basic, 1, 'COMMA', 2, 'POINT')}">$50,000.00</span>
+                </div>
+                <div class="payslip-row">
+                    <span>Allowances (20%)</span>
+                    <span style="color: var(--badge-green-text);" th:text="'$' + ${#numbers.formatDecimal(payroll.allowances, 1, 'COMMA', 2, 'POINT')}">$10,000.00</span>
+                </div>
+                <div class="payslip-row payslip-total">
+                    <span>Total Earnings</span>
+                    <span th:text="'$' + ${#numbers.formatDecimal(payroll.basic.add(payroll.allowances), 1, 'COMMA', 2, 'POINT')}">$60,000.00</span>
+                </div>
+            </div>
+
+            <!-- Deductions Box -->
+            <div class="payslip-box">
+                <h4 style="margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);">Deductions</h4>
+                <div class="payslip-row">
+                    <span>Statutory Deductions (12%)</span>
+                    <span style="color: var(--badge-red-text);" th:text="'$' + ${#numbers.formatDecimal(payroll.deductions, 1, 'COMMA', 2, 'POINT')}">$6,000.00</span>
+                </div>
+                <div class="payslip-row" style="visibility: hidden;">
+                    <span>Spacer</span>
+                    <span>$0.00</span>
+                </div>
+                <div class="payslip-row payslip-total">
+                    <span>Total Deductions</span>
+                    <span style="color: var(--badge-red-text);" th:text="'$' + ${#numbers.formatDecimal(payroll.deductions, 1, 'COMMA', 2, 'POINT')}">$6,000.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Net Payable Amount -->
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="stat-label">Net Payable Salary</span>
+                <div style="font-size: 12px; color: var(--muted);">Formula: Basic + 20% Allowances - 12% Deductions</div>
+            </div>
+            <div style="font-size: 28px; font-weight: 700; color: var(--text);"
+                 th:text="'$' + ${#numbers.formatDecimal(payroll.netSalary, 1, 'COMMA', 2, 'POINT')}">
+                $54,000.00
+            </div>
+        </div>
+
+        <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); text-align: center;">
+            This is a computer-generated salary slip and does not require a physical signature &bull; HRGenius
+        </div>
+    </div>
+</div>
+</body>
+</html>

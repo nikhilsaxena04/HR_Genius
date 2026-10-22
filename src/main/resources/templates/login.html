@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — HRGenius</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="login-page">
+    <div class="login-card">
+        <h1 class="login-logo">HRGenius</h1>
+        <p class="login-subtitle">Human Resource Management System</p>
+
+        <!-- Feedback Messages -->
+        <div th:if="${param.error}" class="alert alert-danger">
+            Invalid email, password, or account is deactivated.
+        </div>
+        <div th:if="${param.logout}" class="alert alert-success">
+            You have been logged out successfully.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Email Address</label>
+                <input type="email" id="username" name="username" placeholder="name@hrgenius.com" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                Sign In
+            </button>
+        </form>
+
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.6;">
+            <strong>Demo Credentials:</strong><br>
+            Admin: <code>admin@hrgenius.com</code> / <code>Admin@123</code><br>
+            Employee: <code>rahul@hrgenius.com</code> / <code>Welcome@123</code>
+        </div>
+    </div>
+</body>
+</html>

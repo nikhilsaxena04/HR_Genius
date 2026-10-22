@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Payroll', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Payroll Management</h2>
+            <p style="color: var(--muted); font-size: 13px;" th:if="${isAdmin}">Generate monthly salaries and view organization payslips</p>
+            <p style="color: var(--muted); font-size: 13px;" th:unless="${isAdmin}">Access and print your monthly payslips</p>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- ==========================================
+         ADMIN VIEW: Payroll Generator & Filter
+         ========================================== -->
+    <div th:if="${isAdmin}">
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h3 class="card-title">Generate Monthly Payroll</h3>
+            </div>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 16px;">
+                Calculates salaries for all active employees (Allowances = 20%, Deductions = 12%). Already generated records will not be duplicated.
+            </p>
+            <form th:action="@{/payroll/generate}" method="post" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <div style="width: 140px;">
+                    <select name="month">
+                        <option th:each="m : ${months}"
+                                th:value="${m}"
+                                th:text="${T(java.time.Month).of(m).name()}"
+                                th:selected="${m == selectedMonth}">OCTOBER</option>
+                    </select>
+                </div>
+                <div style="width: 120px;">
+                    <select name="year">
+                        <option th:each="y : ${years}"
+                                th:value="${y}"
+                                th:text="${y}"
+                                th:selected="${y == selectedYear}">2026</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Generate Payroll</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payroll Records Table (Shared Structure) -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span th:if="${isAdmin}">Salary Statements</span>
+                <span th:unless="${isAdmin}">Your Payslip History</span>
+            </h3>
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:if="${isAdmin}">Employee</th>
+                        <th>Period</th>
+                        <th>Basic Salary</th>
+                        <th>Allowances (20%)</th>
+                        <th>Deductions (12%)</th>
+                        <th>Net Salary</th>
+                        <th>Generated On</th>
+                        <th style="width: 120px; text-align: right;">Payslip</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(payrolls)}">
+                        <td th:colspan="${isAdmin ? 8 : 7}" style="text-align: center; color: var(--muted); padding: 24px;">
+                            No payroll records found.
+                        </td>
+                    </tr>
+                    <tr th:each="pay : ${payrolls}">
+                        <td th:if="${isAdmin}">
+                            <strong th:text="${pay.employee.fullName}">Rahul Sharma</strong><br>
+                            <small style="color: var(--muted);" th:text="${pay.employee.empCode}">EMP001</small>
+                        </td>
+                        <td>
+                            <strong th:text="${T(java.time.Month).of(pay.month).name()} + ' ' + ${pay.year}">OCTOBER 2026</strong>
+                        </td>
+                        <td th:text="'$' + ${#numbers.formatDecimal(pay.basic, 1, 'COMMA', 2, 'POINT')}">$50,000.00</td>
+                        <td style="color: var(--badge-green-text);" th:text="'+$' + ${#numbers.formatDecimal(pay.allowances, 1, 'COMMA', 2, 'POINT')}">+$10,000.00</td>
+                        <td style="color: var(--badge-red-text);" th:text="'-$' + ${#numbers.formatDecimal(pay.deductions, 1, 'COMMA', 2, 'POINT')}">-$6,000.00</td>
+                        <td>
+                            <strong style="font-size: 15px;" th:text="'$' + ${#numbers.formatDecimal(pay.netSalary, 1, 'COMMA', 2, 'POINT')}">$54,000.00</strong>
+                        </td>
+                        <td th:text="${#temporals.format(pay.generatedOn, 'dd MMM yyyy')}">22 Oct 2026</td>
+                        <td style="text-align: right;">
+                            <a th:href="@{'/payroll/payslip/' + ${pay.id}}" class="btn btn-secondary btn-sm">View Payslip</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Attendance', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Attendance Management</h2>
+            <p style="color: var(--muted); font-size: 13px;" th:if="${isAdmin}">Review daily organization-wide attendance logs</p>
+            <p style="color: var(--muted); font-size: 13px;" th:unless="${isAdmin}">Clock in, clock out, and track your attendance history</p>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- ==========================================
+         ADMIN VIEW: Date Filter & Attendance List
+         ========================================== -->
+    <div th:if="${isAdmin}">
+        <!-- Date Selector Card -->
+        <div class="card" style="padding: 16px 20px; margin-bottom: 20px;">
+            <form th:action="@{/attendance}" method="get" style="display: flex; gap: 12px; align-items: center; margin: 0; flex-wrap: wrap;">
+                <label for="date" style="margin: 0; font-weight: 500;">Select Date:</label>
+                <div style="width: 180px;">
+                    <input type="date" id="date" name="date" th:value="${selectedDate}">
+                </div>
+                <button type="submit" class="btn btn-secondary">View Records</button>
+                <a th:href="@{/attendance}" class="btn btn-secondary">Today</a>
+            </form>
+        </div>
+
+        <!-- Attendance Records Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Attendance Log for <span th:text="${#temporals.format(selectedDate, 'dd MMMM yyyy')}">22 October 2026</span>
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee Code</th>
+                            <th>Full Name</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(attendanceList)}">
+                            <td colspan="6" style="text-align: center; color: var(--muted); padding: 24px;">
+                                No attendance records found for this date.
+                            </td>
+                        </tr>
+                        <tr th:each="att : ${attendanceList}">
+                            <td><code th:text="${att.employee.empCode}">EMP001</code></td>
+                            <td>
+                                <strong th:text="${att.employee.fullName}">Rahul Sharma</strong>
+                            </td>
+                            <td th:text="${att.employee.department != null ? att.employee.department.name : '—'}">Engineering</td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="'badge-' + ${att.status}"
+                                      th:text="${att.status}">PRESENT</span>
+                            </td>
+                            <td th:text="${att.checkIn != null ? #temporals.format(att.checkIn, 'hh:mm a') : '—'}">09:00 AM</td>
+                            <td th:text="${att.checkOut != null ? #temporals.format(att.checkOut, 'hh:mm a') : '—'}">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         EMPLOYEE VIEW: Clock In/Out & History
+         ========================================== -->
+    <div th:unless="${isAdmin}">
+        <!-- Today's Clock In/Out Action Card -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h3 class="card-title">Today's Clock Status</h3>
+                <span class="badge"
+                      th:if="${todayAttendance != null}"
+                      th:classappend="'badge-' + ${todayAttendance.status}"
+                      th:text="${todayAttendance.status}">PRESENT</span>
+                <span class="badge badge-amber" th:if="${todayAttendance == null}">NOT CLOCKED IN</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                <div class="stat-card">
+                    <div class="stat-label">Check In Time</div>
+                    <div style="font-size: 20px; font-weight: 700;"
+                         th:text="${todayAttendance != null && todayAttendance.checkIn != null ? #temporals.format(todayAttendance.checkIn, 'hh:mm:ss a') : '—'}">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Check Out Time</div>
+                    <div style="font-size: 20px; font-weight: 700;"
+                         th:text="${todayAttendance != null && todayAttendance.checkOut != null ? #temporals.format(todayAttendance.checkOut, 'hh:mm:ss a') : '—'}">—</div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <form th:action="@{/attendance/checkin}" method="post">
+                    <button type="submit" class="btn btn-primary"
+                            th:disabled="${todayAttendance != null}">
+                        Check In
+                    </button>
+                </form>
+
+                <form th:action="@{/attendance/checkout}" method="post">
+                    <button type="submit" class="btn btn-secondary"
+                            th:disabled="${todayAttendance == null || todayAttendance.checkOut != null}">
+                        Check Out
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 30-Day Attendance History -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Your Recent Attendance (Last 30 Days)</h3>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(history)}">
+                            <td colspan="4" style="text-align: center; color: var(--muted); padding: 24px;">
+                                No attendance records recorded in the past 30 days.
+                            </td>
+                        </tr>
+                        <tr th:each="att : ${history}">
+                            <td th:text="${#temporals.format(att.date, 'EEEE, dd MMM yyyy')}">Monday, 22 Oct 2026</td>
+                            <td>
+                                <span class="badge"
+                                      th:classappend="'badge-' + ${att.status}"
+                                      th:text="${att.status}">PRESENT</span>
+                            </td>
+                            <td th:text="${att.checkIn != null ? #temporals.format(att.checkIn, 'hh:mm a') : '—'}">09:00 AM</td>
+                            <td th:text="${att.checkOut != null ? #temporals.format(att.checkOut, 'hh:mm a') : '—'}">06:00 PM</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

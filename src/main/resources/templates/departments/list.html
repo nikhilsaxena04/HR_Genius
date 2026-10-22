@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout :: layout('Departments', ~{::content})}">
+<body>
+<div th:fragment="content">
+    <div class="toolbar">
+        <div>
+            <h2>Departments</h2>
+            <p style="color: var(--muted); font-size: 13px;">Manage organizational departments and business units</p>
+        </div>
+        <a th:href="@{/departments/new}" class="btn btn-primary">+ Add Department</a>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Department Name</th>
+                        <th style="width: 160px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(departments)}">
+                        <td colspan="3" style="text-align: center; color: var(--muted); padding: 24px;">
+                            No departments found. Click "+ Add Department" to create one.
+                        </td>
+                    </tr>
+                    <tr th:each="dept : ${departments}">
+                        <td th:text="${dept.id}">1</td>
+                        <td>
+                            <strong th:text="${dept.name}">Engineering</strong>
+                        </td>
+                        <td style="text-align: right;">
+                            <div style="display: inline-flex; gap: 8px;">
+                                <a th:href="@{'/departments/edit/' + ${dept.id}}" class="btn btn-secondary btn-sm">Edit</a>
+                                <a th:href="@{'/departments/delete/' + ${dept.id}}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Are you sure you want to delete this department?');">Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
