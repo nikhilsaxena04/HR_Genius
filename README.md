@@ -88,6 +88,7 @@ The system automatically initializes demo data upon first boot:
 ### Quick Start (Single Command)
 ```bash
 # Clone or navigate to the repository
+git clone https://github.com/nikhilsaxena04/HR_Genius.git
 cd HR_Genius
 
 # Run tests
